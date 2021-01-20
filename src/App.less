@@ -5,6 +5,11 @@ alternatives:
 @import '~antd/dist/antd.compact.less'; 
 */
 
+// load Medium editor theme styles with webpack
+@import '~medium-editor/dist/css/medium-editor.css';
+@import '~medium-editor/dist/css/themes/default.css';
+
+
 
 .App {
   text-align: center;
@@ -12,8 +17,7 @@ alternatives:
 
 .logo {
   height: 32px;
-  background: rgba(255, 255, 255, 0.2);
-  margin: 16px;
+  margin: 8px;
 }
 
 .site-layout-sub-header-background {
@@ -22,4 +26,8 @@ alternatives:
 
 .site-layout-background {
   background: #fff;
+}
+
+.site-page-header {
+  //border: 1px solid rgb(235, 237, 240);
 }

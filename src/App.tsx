@@ -1,7 +1,8 @@
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
 import './App.less';
 
-import { Image, Layout, Menu } from 'antd';
+import { Layout, Menu, Image, Avatar, Space, Steps } from 'antd';
+
 
 // see https://ant.design/components/icon/
 import {
@@ -33,8 +34,17 @@ import {
 
 
 } from '@ant-design/icons';
+import Analyze from './analyze/Analyze';
+import HomePage from './home/Home';
 
+import Title from 'antd/lib/typography/Title';
 
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link
+} from "react-router-dom";
 
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -44,47 +54,34 @@ const { Header, Content, Footer, Sider } = Layout;
 
 const App: FC = () => (
   <Layout>
-    <Sider
-      theme="light"
-      breakpoint="lg"
-      collapsedWidth="0"
-      onBreakpoint={broken => {
-        console.log(broken);
-      }}
-      onCollapse={(collapsed, type) => {
-        console.log(collapsed, type);
-      }}
-    >
-      <div className="logo">
-        <Image src="logo.png" ></Image>
-      </div>
 
-      <Menu theme="light" mode="inline" defaultSelectedKeys={['1']}>
-        <Menu.Item key="1" icon={<HomeOutlined />}>
-          Home
-        </Menu.Item>
-        <Menu.Item key="2" icon={<CameraOutlined />}>
-          Scan a picture
-        </Menu.Item>
-        <Menu.Item key="3" icon={<UploadOutlined />}>
-          Upload a document
-        </Menu.Item>
-        <Menu.Item key="4" icon={<AudioFilled />}>
-          Transcribe Audio
-        </Menu.Item>
-        <Menu.Item key="5" icon={<LinkOutlined />}>
-          Analyse Web Article
-        </Menu.Item>
+    <Layout style={{ height: '100%' }}>
+      <Header className="site-layout-sub-header-background" style={{ padding: 8, margin: '2px 0 0' }}>
+
+      </Header>
+
+      <Content style={{ margin: '0 0 0', height: '100%' }}>
+        <div className="site-layout-background" style={{ padding: 12, minHeight: 360, height: "100%" }}>
+          <Router>
 
 
-      </Menu>
-    </Sider>
-    <Layout style={{ height: '100vh' }}>
-      <Header className="site-layout-sub-header-background" style={{ padding: 0 }} />
+            <Switch>
 
-      <Content style={{ margin: '24px 16px 0' }}>
-        <div className="site-layout-background" style={{ padding: 24, minHeight: 360, height: "100%" }}>
-          content
+
+              {/* Route: Document Analysis*/}
+              <Route path="/analyze">
+                <Analyze />
+              </Route>
+
+              {/* Route: Home*/}
+              <Route exact path="/">
+                <HomePage />
+              </Route>
+
+
+            </Switch>
+          </Router>
+
         </div>
       </Content>
 
