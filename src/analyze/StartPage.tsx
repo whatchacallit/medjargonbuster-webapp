@@ -1,36 +1,33 @@
 import React, { FC } from 'react';
 import '../App.less';
 
-import { Card, Image, Avatar, Space, Upload, Row, Col, PageHeader, Spin, message, Steps } from 'antd';
+import { Row, Col, PageHeader, } from 'antd';
 
 
-import { ExtractionResultContext, IExtractionContextType, IExtractionResult } from './Contexts';
 import UploadCard from './UploadCard';
 import UrlCard from './UrlCard';
-import ResultPage from './ResultPage';
+
+import { useAnalysisContext } from './Contexts'
 
 
 const avatarGreeting = "Welcome"
-const avatarMessage = "how can I help you?"
+const avatarMessage = "Please show the the document you want to understand better"
 
 
-const StartPage: FC = (props: any) => {
+const StartPage: FC = () => {
+    const ctx = useAnalysisContext()
+
+    console.log("StartPage context", ctx)
+
     return (
         <>
-            <PageHeader
-                style={{ 'textAlign': 'center' }}
-                className="site-page-header"
-                backIcon={false}
-                avatar={{ src: '/img/avatar.png' }}
-                title={avatarGreeting}
-                subTitle={avatarMessage}
-            />
+
             <Row gutter={[24, 16]} style={{ height: '100%' }}>
                 <Col xs={24} sm={24} md={24} lg={12} xl={12}>
-                    <UploadCard {...props} />
+                    <UploadCard />
                 </Col>
                 <Col xs={24} sm={24} md={24} lg={12} xl={12}>
-                    <UrlCard {...props} />
+                    <UrlCard />
                 </Col>
 
             </Row>

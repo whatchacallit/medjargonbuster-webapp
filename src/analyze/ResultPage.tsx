@@ -1,37 +1,80 @@
-import { ChangeEvent, CSSProperties, FC, useContext, useState } from 'react';
+import { CSSProperties } from 'react';
 import '../App.less';
 
 import ReadableContent from './ReadableContent';
 
-import { Card, Input, message, Row, Col, Button } from 'antd';
+import { Card, Row, Col, Typography, Space, Statistic, Rate, Divider } from 'antd';
+import { useAnalysisContext } from './Contexts';
 import Paragraph from 'antd/lib/typography/Paragraph';
-import Search from 'antd/lib/input/Search';
-import { ExtractionResultContext, IExtractionResult, useExtractionResult } from './Contexts';
-import TextArea from 'antd/lib/input/TextArea';
+import moment from 'moment'
 
+
+import {
+    FilePdfOutlined, GlobalOutlined,
+    SolutionOutlined, FileUnknownOutlined, TranslationOutlined, HighlightOutlined,
+    MedicineBoxOutlined, LineChartOutlined, PartitionOutlined
+} from '@ant-design/icons';
+
+const { Text, Title, Link } = Typography;
 
 
 const IR_TOKEN_URL = "http://localhost:5000/getIRToken"
 
-function ResultPage(props: IExtractionResult) {
+function ResultPage() {
 
-    const d = props.meta
+    const ctx = useAnalysisContext()
+
+    // shorten this a bit...
+    const d = ctx.analysisResult.meta
+    console.log("Result meta:", d)
+
     //var summaryText = d.summaryText
     var summaryHTML = d.summary_sentences.join("<li>")
     var doc_language = d.language || "unknown"
-    var doc_title = d.title || "unknown"
-    var doc_authors = d.authors || "unknown"
-    var doc_classification = d.source || "unknown"
+    var doc_title = d.title || "Unknown Title "
+    var doc_authors = Array(d.Author).join(", ") || "(unknown)"
+    var doc_classification = d.source || "(unknown)"
 
-    var doc_metadata = {
-        num_pages: d.num_pages || "unknown",
-        publication_year: d.publication_year || "unknown",
+    //FIXME get this from backend
+    var creation_date = moment(d["Creation-Date"]) || moment("2020-08-01 12:36", "YYYY-MM-DD hh:mm")
+    var doc_create_date = creation_date.format('MMMM Do YYYY, hh:mm');
+    var doc_create_age = creation_date.fromNow();
 
-    }
+    var doc_num_pages = d['xmpTPg:NPages'] || "(unknown)";
+    var doc_num_words = 1000;
+    var doc_reading_time = (d['num_words'] / 180.0).toFixed(0)
+
+    var doc_source_reference = d["description"] || "(unknown)";
+
+    var doc_trust_score = 2.5
+    var doc_readability = 1.7
+
+
+
 
     const cardStyle: CSSProperties = {
         height: "100%",
         border: "none"
+    }
+    const iconStyle: CSSProperties = {
+        fontSize: '32px',
+        textAlign: 'center',
+        height: '100%',
+
+    }
+
+    const getIconForDocumentClassification = (d: any) => {
+        if (d.source == 'document')
+            return < FilePdfOutlined style={iconStyle} alt={"Document"} />
+
+        if (d.source == 'web_article')
+            return < GlobalOutlined style={iconStyle} alt={"web article"} />
+
+        if (d.source == 'wikipedia')
+            return < SolutionOutlined style={iconStyle} alt={"Wikipedia"} />
+
+        return < FileUnknownOutlined style={iconStyle} alt={"Unknown"} />
+
     }
 
 
@@ -40,25 +83,100 @@ function ResultPage(props: IExtractionResult) {
 
 
     return (
-        <Row gutter={[24, 16]} style={{ height: '90%' }}>
-            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-                <Card style={cardStyle}>
-                    <ReadableContent title="Summary" paragraphs={d.summary_sentences} />
-                </Card>
-            </Col>
-
-            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-                <Card style={cardStyle}>
-                    <p>Title: {doc_title}</p>
-                    <p>Classification: {doc_classification}</p>
-                    <p>Language: {doc_language}</p>
-                    <p>Authors: {doc_authors}</p>
-                </Card>
-            </Col>
-
+        <Row gutter={[24, 16]} style={{ height: '100%' }}>
             <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+                <Row gutter={[24, 16]}>
+                    <Col span={24} style={{ textAlign: "center" }}>
+                        <Title level={4} ellipsis>{doc_title}</Title>
+                        <Paragraph ellipsis>
+                            <Text type="secondary">by:</Text> <Text style={{ wordWrap: "break-word" }} >{doc_authors}</Text><p />
+                            <Text type="secondary">published:</Text> <Text>{doc_create_date} ({doc_create_age})</Text><p />
+                            <Text type="secondary">source:</Text> {doc_source_reference}<p />
+                        </Paragraph>
+
+                    </Col>
+                </Row>
+            </Col>
+
+            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                <ReadableContent title="Summary" paragraphs={d.summary_sentences} />
+            </Col>
+
+            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
                 <Card style={cardStyle}>
-                    Trustscore..
+                    <Row gutter={[24, 16]}>
+                        <Col span="12">
+                            <Statistic title="Trust score" prefix={<Rate disabled allowHalf defaultValue={doc_trust_score} />} value=" " />
+                        </Col>
+                        <Col span="12">
+                            <Statistic title="Text readability" prefix={<Rate disabled allowHalf defaultValue={doc_readability} />} value=" " />
+                        </Col>
+
+                        <Col span="12">
+                            <Statistic title="Document type" prefix={getIconForDocumentClassification(d)} value={d.source} />
+                        </Col>
+                        <Col span="12">
+                            <Statistic title="Original Language" prefix={<TranslationOutlined />} value={doc_language} />
+                        </Col>
+                    </Row>
+                    <Row gutter={[24, 16]}>
+                        <Col span="12">
+                            <Statistic title="Document length" prefix={<FileUnknownOutlined />} suffix="pages" value={doc_num_pages} />
+                        </Col>
+                        <Col span="12">
+                            <Statistic title="Estimated reading time" suffix={"minutes"} value={doc_reading_time} />
+                        </Col>
+                    </Row>
+                    <Row gutter={[24, 16]}>
+                        <Col span="12">
+                            <Statistic title="Text length" prefix={<HighlightOutlined />} suffix="words" value={doc_num_words} />
+                        </Col>
+                        <Col span="12">
+                            <Statistic title="More info" prefix={<Link href="#">Click here...</Link>} value=" " />
+                        </Col>
+                    </Row>
+
+                </Card>
+            </Col>
+
+            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                <Card style={cardStyle} title="Key Topics and concepts">
+                    <Row gutter={[24, 16]}>
+                        <Col span="8">
+                            <Space direction="vertical">
+                                <MedicineBoxOutlined style={iconStyle} /> Medication
+                                <Divider />
+                                { }
+                            </Space>
+                        </Col>
+                        <Col span="8">
+                            <Space direction="vertical">
+                                <LineChartOutlined style={iconStyle} /> Threatments
+                                <Divider />
+                                { }
+                            </Space>
+
+                        </Col>
+                        <Col span="8">
+                            <Space direction="vertical">
+                                <PartitionOutlined style={iconStyle} /> Body Parts
+                                {<ul><li>a</li><li>b</li></ul>}
+                            </Space>
+
+                        </Col>
+                    </Row>
+
+                </Card>
+            </Col>
+
+
+            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                <Card style={cardStyle} title="Further reading">
+                    <Row gutter={[24, 16]}>
+                        <Col span="24">
+                            TBD
+                        </Col>
+                    </Row>
                 </Card>
             </Col>
 

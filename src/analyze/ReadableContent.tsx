@@ -1,21 +1,23 @@
-import { ChangeEvent, CSSProperties, FC, useContext, useState } from 'react';
+import { CSSProperties } from 'react';
 
-import { Card, Input, message, Row, Col, Button, Typography } from 'antd';
+import { Card, Input, Button, Typography, Switch } from 'antd';
 
-import { ExtractionResultContext, IExtractionResult, useExtractionResult } from './Contexts';
+import { useAnalysisContext } from './Contexts';
 import '../App.less';
+
+import { TranslationOutlined } from '@ant-design/icons';
 
 // ES module
 //import Editor from 'react-medium-editor';
 
 import ReactMarkdown from 'react-markdown'
-import { render } from 'react-dom'
+//import { render } from 'react-dom'
 import gfm from 'remark-gfm'
 
 
 
-const { Paragraph } = Typography;
-const { Search, TextArea } = Input;
+//const { Paragraph } = Typography;
+//const { Search, TextArea } = Input;
 
 
 
@@ -29,24 +31,25 @@ const IR_TOKEN_URL = "http://localhost:5000/getIRToken"
  * 
  */
 function ReadableContent(props: any) {
+    const ctx = useAnalysisContext()
 
-    const immersiveReaderButtonStyle = {
-        backgroundColor: "white",
-        marginTop: "5px",
-        border: "1px solid black",
-        float: "right"
+    const immersiveReaderButtonStyle: CSSProperties = {
+        //float: "right",
+        marginRight: 20
     }
     const cardStyle: CSSProperties = {
         height: "100%"
     }
 
-    var translateToLanguage = "de-CH"
+    var translateToLanguage = ctx.options.autoTranslateLanguage
+    var originalLanguage = ctx.analysisResult.meta['language'] || "en-US"
+
     var contentParagraphs = props.paragraphs || ["Unfortunatly, this text is unavailable"]
 
     // FIXME maybe use multiple "chunks" ?
     var markdownSource = "* " + contentParagraphs.join("\n* ")
     var chunks = [{
-        content: markdownSource,
+        content: contentParagraphs.join("\n\n"),
         mimeType: "text/html"
     }]
     //console.log("chunks", chunks);
@@ -59,20 +62,22 @@ function ReadableContent(props: any) {
     };
     /** Options sent to the Immersive reader */
     // https://docs.microsoft.com/azure/cognitive-services/immersive-reader/reference#options
-    const options = {
+    const irOptions = {
         "onExit": exitCallback,
         "uiZIndex": 2000,
-        "uiLang": "en",
+        "uiLang": translateToLanguage || "en-US",
         "readAloudOptions": {
-            autoplay: true
+            voice: "Female",
+            speed: 1.0,
+            autoPlay: true,
 
         },
         "translationOptions": {
-            language: translateToLanguage,
-            autoEnableDocumentTranslation: true
+            language: translateToLanguage || "en-US",
+            autoEnableDocumentTranslation: ctx.options.autoTranslate
         },
         "displayOptions": {
-            textSize: 36
+            textSize: 20
         }
     };
 
@@ -114,10 +119,10 @@ function ReadableContent(props: any) {
                 const token = response["token"];
                 const subdomain = response["subdomain"];
 
-                // FIXME clean way to get object from, this just grabs from global scope (script inside index.html)
+                // FIXME clean way to get object from, this just grabs from global scope (script loaded inside index.html)
                 const ImmersiveReader: any = Object(window)['ImmersiveReader']
 
-                ImmersiveReader.launchAsync(token, subdomain, data, options)
+                ImmersiveReader.launchAsync(token, subdomain, data, irOptions)
                     .catch(function (error: any) {
                         alert("We're sorry, something went wrong starting the Immersive Reader.");
                         console.log(error);
@@ -137,17 +142,28 @@ function ReadableContent(props: any) {
          */
     }
 
+    const toggleAutotranslate = () => {
+        ctx.setOptions(Object.assign({}, ctx.options, { autoTranslate: !ctx.options.autoTranslate }))
 
+    }
+
+    let btnOpenIR = (<Button key={1} size="small" onClick={launchReader} style={immersiveReaderButtonStyle}>
+        Immersive Reader <TranslationOutlined />
+    </Button>)
+
+    let switchAutoTranslate = (<Switch size="small" title="Translate"
+        onClick={toggleAutotranslate}
+        checked={ctx.options.autoTranslate}
+        unCheckedChildren={originalLanguage.substr(0, 2)}
+        checkedChildren={String(translateToLanguage).substr(0, 2)} />)
 
     return (
         <>
-            <Card title={props.title}>
+            <Card title={props.title} extra={[btnOpenIR, switchAutoTranslate]}>
 
                 <ReactMarkdown plugins={[gfm]} children={markdownSource} />
 
-                <Button onClick={launchReader} className="immersive-reader-button">
-                    Read &amp; Translate
-                </Button>
+
             </Card>
         </>
     )

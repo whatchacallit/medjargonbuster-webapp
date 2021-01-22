@@ -1,15 +1,30 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import '../App.less';
 
-import { Card, Image, Avatar, Space, Upload, Row, Col, PageHeader, Spin, message, Steps } from 'antd';
+import { Button, message, PageHeader, Steps } from 'antd';
+import {
+    HomeOutlined,
+    FileTextTwoTone,
+    HourglassTwoTone,
+    HeartTwoTone,
+    SettingTwoTone,
+    ProfileTwoTone,
+    QuestionCircleTwoTone,
+    CompassTwoTone,
 
-import { BrowserRouter as Router, Route, Switch, Link, useHistory } from 'react-router-dom';
+} from '@ant-design/icons';
 
-import { ExtractionResultContext, IExtractionContextType, IExtractionResult } from './Contexts';
+import Paragraph from 'antd/lib/typography/Paragraph';
+
+
+import { BrowserRouter as Router, Route, Switch, useHistory, useLocation } from 'react-router-dom';
+
+import { AnalysisContext, IAnalysisOptions, IPipelineResult } from './Contexts';
 
 import StartPage from './StartPage';
 import AnalyzingSpinnerPage from './AnalyzingSpinnerPage';
 import ResultPage from './ResultPage';
+
 
 const { Step } = Steps
 
@@ -21,53 +36,105 @@ const { Step } = Steps
  */
 const ROUTES = {
     start: "/analyze",
-    analysing: "/analyze/loading",
+    analyzing: "/analyze/loading",
     done: "/analyze/results",
     error: "/analyze/error"
 }
 
+const API_BASE_URL = "http://localhost:5000"
 
-const RUN_PIPELINE_ENDPOINT_URL = "http://localhost:5000/pipeline/default"
+const EXTRACT_TEXT_ENDPOINT_URL = `${API_BASE_URL}/extract`
+const RUN_PIPELINE_ENDPOINT_URL = `${API_BASE_URL}/pipeline/default`
 
 
 
 const AnalyzePage: FC = () => {
-    const [extractionResult, setExtractionResult] = React.useState<IExtractionResult>({})
-    const [analysisResult, setAnalysisResult] = React.useState<IExtractionResult>({})
-    const history = useHistory() // used for navigation using react router
+    const [extractionResult, setExtractionResult] = React.useState<IPipelineResult>({})
+    const [analysisResult, setAnalysisResult] = React.useState<IPipelineResult>({})
+    const [isExtracting, setExtracting] = useState(false)
+    const [isAnalyzing, setAnalyzing] = useState(false)
+    const [hasResult, setHasResult] = useState(false)
+    const [hasError, setHasError] = useState(false)
+
+    const defaultOptions: IAnalysisOptions = {
+        autoTranslate: true,
+        autoTranslateLanguage: "de-CH",
+
+    }
+    const [options, setOptions] = useState(defaultOptions) // TODO localstorage / Cookie ?
+
+    const [currentStep, setCurrentStep] = useState(0)
+
+
+    let location = useLocation()
+
+
+    /** 
+     * This hook is triggered whenever the "location" changes (e.g. by history.push) via the router.
+     * (extraction results are set by the child components that call the "extract" API endpoint)
+     */
+    useEffect(() => {
+        console.log("location changed", location)
+        console.log("Current step is ", currentStep)
+    }, [location])
+
+
+    /**
+     * If we have an extraction result ready, start the Analysis
+     */
+    useEffect(() => {
+        console.log("Some result changed...")
+        if (extractionResult.text && !analysisResult.text && !hasError) {
+            console.log("Received extraction result, starting Analysis...")
+            setCurrentStep(1)
+            startAnalysis(extractionResult);
+        }
+        else if (analysisResult.text && !hasError) {
+            console.log("Received analysis result, showing results...")
+            setCurrentStep(2)
+        }
+
+
+    }, [extractionResult, analysisResult]);
+
+
+
 
 
     /**
      * Clears the context and starts over
      */
     const back_to_start = () => {
+
+
         setAnalysisResult({})
         setExtractionResult({})
-        history.push(ROUTES.start)
-    }
+        setExtracting(false)
+        setAnalyzing(false)
+        setHasResult(false)
+        setHasError(false)
 
-    /**
-     * Returns index of the current "step":
-     * 0 = Start
-     * 1 = Analyzing (spinner)
-     * 2 = Result
-     */
-    const getCurrentStep = () => {
-        console.log("history", history)
-        return 0
+        setCurrentStep(0)
+
     }
 
 
+
+
     /**
-     * Starts the analysis by calling the backend. 
+     * Starts the analysis by calling the backend.
+     * 
      * 
      * @param extractionResult 
      */
-    const startAnalysis = (extractionResult: IExtractionResult) => {
+    const startAnalysis = async (extractionResult: IPipelineResult) => {
+        setAnalyzing(true)
+        setCurrentStep(1)
+
         const pipelineExecutionRequest = {
             "text": extractionResult.text,
             "meta": extractionResult.meta,
-            //"settings": { "disable": [] }
+            "settings": { "disable": ["ner"] }
         }
 
         console.log("Starting analysis of extracted text", extractionResult.text, extractionResult.meta)
@@ -78,61 +145,115 @@ const AnalyzePage: FC = () => {
                 "accept": "application/json"
             }
         }
-        history.push(ROUTES.analysing)
 
-        fetch(RUN_PIPELINE_ENDPOINT_URL, options)
-            .then(response => response.json())
-            .then(json => {
-                message.success(`Text Analysis was successfully...`);
-
-                setAnalysisResult({ meta: json['meta'], text: json['text'] })
-                history.push(ROUTES.done)
-
-
-                console.log("Analysis successful: ", json)
+        const response = await fetch(RUN_PIPELINE_ENDPOINT_URL, options);
+        if (response.status >= 200 && response.status <= 299) {
+            const jsonResponse = await response.json();
+            //message.success(`Text Analysis was successfully...`);
+            setAnalysisResult({
+                meta: jsonResponse['meta'],
+                text: jsonResponse['text']
             })
+            setAnalyzing(false)
+            setHasResult(true)
+            setCurrentStep(2)
 
 
+        } else {
+            message.success(`There was an Error...`);
+            console.log("Error while analyzing: ", response.status, response.statusText)
+            setAnalyzing(false)
+            setHasResult(false)
+            setHasError(true)
+            setCurrentStep(0)
+
+        }
     }
 
 
 
+    // body depends on the step
+    let body = null;
+
+    // TODO I tried with react router, but had more issues than benefit. 
+    // Is there a better way? 
+    switch (currentStep) {
+        case 0: body = <StartPage />; break;
+        case 1: body = <AnalyzingSpinnerPage />; break;
+        case 2: body = <ResultPage />; break;
+        default: body = <StartPage />
+    }
+
+    const getStepStatus = (step: number) => {
+        // error, finish, process, wait
+        if (step < currentStep) {
+            return "finish"
+        }
+        if (step == currentStep) {
+            return "process"
+        }
+        if (step > currentStep) {
+            return "wait"
+        }
+
+    }
+
+    const avatarTitle = [
+        "Hi Florian",
+        "Ok, let's see...",
+        "Here's what I got "
+    ]
+
+    const avatarSubTitle = [
+        "can I help you understand some medical jargon?",
+        "I'm analyzing the document for you, please wait",
+        "Let me know if you have more questions"
+    ]
+
+    const stepTitles = [
+        "Original",
+        "MedJargonBuster",
+        "Summary"
+    ]
 
 
     return (
-        <ExtractionResultContext.Provider value={{ extractionResult, setExtractionResult }}>
+        <AnalysisContext.Provider value={{
+            extractionResult, setExtractionResult, analysisResult, setAnalysisResult,
+            isExtracting, setExtracting, isAnalyzing, setAnalyzing,
+            hasError, setHasError, hasResult, setHasResult, options, setOptions
+        }}>
 
-            <div style={{ height: '100%', alignContent: "center" }}>
-                <Steps style={{ padding: 12 }} progressDot direction="horizontal" size="default" current={getCurrentStep()}>
-                    <Step title="Provide a document" description="" />
-                    <Step title="Run Text Analysis" description="" />
-                    <Step title="Review Results" description="" />
+            <div style={{ height: '100%', alignContent: "center", padding: "5px" }}>
+
+
+                <PageHeader
+                    style={{ paddingBottom: 48, textAlign: 'center' }}
+                    className="site-page-header"
+
+                    avatar={{ src: '/img/avatar.png', shape: "circle" }}
+                    title={avatarTitle[currentStep]}
+                    subTitle={avatarSubTitle[currentStep]}
+                    extra={[
+                        <Button onClick={() => { back_to_start() }}><HomeOutlined /></Button>,
+                    ]}
+                />
+
+
+
+                <Steps style={{ paddingBottom: 12 }} direction="horizontal" size="default" current={currentStep}>
+                    <Step status={getStepStatus(0)} title={stepTitles[0]} icon={<FileTextTwoTone />} />
+                    <Step status={getStepStatus(1)} title={stepTitles[1]} icon={<CompassTwoTone spin={isAnalyzing} />} />
+                    <Step status={getStepStatus(2)} title={stepTitles[2]} icon={<ProfileTwoTone />} />
                 </Steps>
 
 
 
-                <Router>
-                    <Switch>
-                        <Route exact path="/analyze">
-                            <StartPage />
-                        </Route>
-
-                        <Route exact path="/analyze/loading">
-                            <AnalyzingSpinnerPage />
-                        </Route>
-
-                        <Route exact path="/analyze/result">
-                            <ResultPage {...analysisResult} />
-                        </Route>
-
-
-
-                    </Switch>
-                </Router>
+                {body}
 
 
             </div >
-        </ExtractionResultContext.Provider>
+        </AnalysisContext.Provider>
 
     )
 }

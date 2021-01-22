@@ -1,20 +1,59 @@
 
 import React, { useContext } from "react";
 
-export type IExtractionResult = {
+export type IPipelineResult = {
     text?: string,
     meta?: any
 }
 
-export type IExtractionContextType = {
-    extractionResult: IExtractionResult,
-    setExtractionResult: (result: IExtractionResult) => void
+export type IAnalysisOptions = {
+    autoTranslate?: boolean,
+    autoTranslateLanguage?: string,
+    autoStartReadAloud?: boolean
+}
+
+
+export type IAnalysisContextType = {
+    extractionResult: IPipelineResult,
+    setExtractionResult: (result: IPipelineResult) => void
+
+    analysisResult: IPipelineResult,
+    setAnalysisResult: (result: IPipelineResult) => void
+
+    isExtracting: boolean,
+    setExtracting: (b: boolean) => void,
+
+    isAnalyzing: boolean,
+    setAnalyzing: (b: boolean) => void,
+
+    hasResult: boolean,
+    setHasResult: (b: boolean) => void,
+
+    hasError: boolean,
+    setHasError: (b: boolean) => void,
+
+    options: IAnalysisOptions,
+    setOptions: (options: IAnalysisOptions) => void,
+
 
 }
 
-export const ExtractionResultContext = React.createContext<IExtractionContextType>({
+export const AnalysisContext = React.createContext<IAnalysisContextType>({
     extractionResult: {},
-    setExtractionResult: result => console.log(result)
+    setExtractionResult: result => console.log(result),
+    analysisResult: {},
+    setAnalysisResult: result => console.log(result),
+    isExtracting: false,
+    setExtracting: b => console.log(b),
+    isAnalyzing: false,
+    setAnalyzing: b => console.log(b),
+    hasResult: false,
+    setHasResult: b => console.log(b),
+    hasError: false,
+    setHasError: b => console.log(b),
+    options: {},
+    setOptions: options => console.log(options)
+
 });
 
-export const useExtractionResult = () => useContext(ExtractionResultContext);
+export const useAnalysisContext = () => useContext(AnalysisContext);

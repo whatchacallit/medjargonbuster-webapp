@@ -1,12 +1,14 @@
 import { FC, useState } from 'react';
 import '../App.less';
 
-import { Card, Input, Upload, message } from 'antd';
-
-import { UploadOutlined } from '@ant-design/icons';
-import Paragraph from 'antd/lib/typography/Paragraph';
+import { Card, Upload, message } from 'antd';
 import { UploadChangeParam, UploadProps } from 'antd/lib/upload';
-import { useExtractionResult } from './Contexts';
+
+import Paragraph from 'antd/lib/typography/Paragraph';
+import { UploadOutlined } from '@ant-design/icons';
+
+import { useAnalysisContext } from './Contexts';
+
 
 const { Dragger } = Upload;
 
@@ -20,39 +22,51 @@ const cardStyle = {
 
 };
 
+
 const UploadCard: FC = () => {
-    const { extractionResult, setExtractionResult } = useExtractionResult()
-    const [is_loading, setLoading] = useState(false)
+
+    const ctx = useAnalysisContext()
 
 
+    const onUploadProgress = (info: UploadChangeParam) => {
+        const { status } = info.file;
+
+        if (status !== 'uploading') {
+            ctx.setExtracting(true)
+
+
+            //console.log("Uploading", info.file, info.fileList);
+        }
+        if (status === 'done') {
+            ctx.setExtracting(false)
+            ctx.setExtractionResult({
+                text: info.file.response.text,
+                meta: info.file.response.meta
+            })
+
+            //message.success(`${info.file.name} file uploaded successfully.`);
+
+
+
+        } else if (status === 'error') {
+            ctx.setExtracting(false)
+            ctx.setHasError(true)
+
+            message.error(`${info.file.name} file upload failed.`);
+        }
+    }
+
+
+
+    /**
+     * see https://ant.design/components/upload/#API
+     */
     const uploadProps = {
         name: 'file',
         multiple: false,
-
+        maxCount: 1,
         action: EXTRACT_UPLOAD_ENDPOINT_URL,
-        onChange(info: UploadChangeParam) {
-            const { status } = info.file;
-
-            if (status !== 'uploading') {
-                setLoading(true)
-
-                //console.log("Uploading", info.file, info.fileList);
-            }
-            if (status === 'done') {
-                setLoading(false)
-                message.success(`${info.file.name} file uploaded successfully.`);
-                //console.log("Done: ", info)
-                setExtractionResult({
-                    text: info.file.response.text,
-                    meta: info.file.response.meta
-                })
-
-
-            } else if (status === 'error') {
-                setLoading(false)
-                message.error(`${info.file.name} file upload failed.`);
-            }
-        },
+        onChange: onUploadProgress
     };
 
     return (
@@ -68,7 +82,7 @@ const UploadCard: FC = () => {
                     </p>
                     <p className="ant-upload-text">Click or drag a file to this area to upload</p>
                     <p className="ant-upload-hint">
-                        max. 1 MB, e.g. pdf, jpeg, png, doc/docx, ppt, ...</p>
+                        max. 1 MB. e.g. pdf, jpeg, png, doc/docx, ppt, ...</p>
 
 
                 </Dragger>

@@ -87,7 +87,7 @@ const App: FC = () => (
 
       <Footer style={{ textAlign: 'center' }}>© 2021 by MedJargonBuster Team <a href="https://medjargonbuster.com">https://medjargonbuster.com</a></Footer>
     </Layout>
-  </Layout>);
+  </Layout >);
 
 
 export default App;
