@@ -6,9 +6,6 @@ import { Row, Col, PageHeader, Spin, message } from 'antd';
 
 
 
-const avatarGreeting = "Ok, let's see..."
-const avatarMessage = "I'm reading your text, please wait..."
-
 
 const AnalyzingSpinnerPage: FC = () => {
     return (

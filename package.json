@@ -11,6 +11,7 @@
     "@types/node": "^12.19.12",
     "@types/react": "^16.14.2",
     "@types/react-dom": "^16.9.10",
+    "ahooks": "^2.9.4",
     "antd": "^4.10.0",
     "craco-less": "^1.17.1",
     "moment": "^2.29.1",

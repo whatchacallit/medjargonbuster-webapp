@@ -36,7 +36,7 @@ function UrlCard() {
             .then(json => {
                 ctx.setExtracting(false);
 
-                message.success(`Url loaded successfully`);
+                //message.success(`Url loaded successfully`);
 
                 ctx.setExtractionResult({
                     meta: json['meta'],
@@ -65,7 +65,7 @@ function UrlCard() {
                 size="large"
             />
             e.g.
-            <Paragraph type="secondary" copyable={true} >https://www.newswise.com/articles/breast-cancer-screening-by-age-40-or-younger-for-black-women-advise-beaumont-researchers?sc=sphr&xy=10021790</Paragraph>
+            <Paragraph type="secondary" copyable={true} >https://www.newswise.com/articles/breast-cancer-screening-by-age-40-or-younger-for-black-women-advise-beaumont-researchers</Paragraph>
         </Card>
     </>
     )

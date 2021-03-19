@@ -9,7 +9,7 @@ import {
 
 const HomePage: FC = () => (
     <Row>
-        <Col>
+        <Col offset={6}>
             <Link to="/analyze">
                 <Image preview={false} className="splashImage" src="splash.png" />
             </Link>

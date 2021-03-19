@@ -31,8 +31,6 @@ import {
   StarFilled,
   TagsOutlined,
   TranslationOutlined
-
-
 } from '@ant-design/icons';
 import Analyze from './analyze/Analyze';
 import HomePage from './home/Home';
@@ -53,15 +51,12 @@ const { Header, Content, Footer, Sider } = Layout;
 
 
 const App: FC = () => (
-  <Layout>
+  <Layout style={{ height: '100%' }}>
 
     <Layout style={{ height: '100%' }}>
-      <Header className="site-layout-sub-header-background" style={{ padding: 8, margin: '2px 0 0' }}>
 
-      </Header>
-
-      <Content style={{ margin: '0 0 0', height: '100%' }}>
-        <div className="site-layout-background" style={{ padding: 12, minHeight: 360, height: "100%" }}>
+      <Content style={{ padding: '0 0 0', height: '100vh' }}>
+        <div className="site-layout-background" style={{ padding: 30, minHeight: 0, height: "100%" }}>
           <Router>
 
 
@@ -85,7 +80,8 @@ const App: FC = () => (
         </div>
       </Content>
 
-      <Footer style={{ textAlign: 'center' }}>© 2021 by MedJargonBuster Team <a href="https://medjargonbuster.com">https://medjargonbuster.com</a></Footer>
+      {/*       <Footer style={{ textAlign: 'center' }}>© 2021 by MedJargonBuster Team <a href="https://medjargonbuster.com">https://medjargonbuster.com</a></Footer>
+ */}
     </Layout>
   </Layout >);
 

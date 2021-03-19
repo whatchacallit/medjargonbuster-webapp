@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useState } from 'react';
 import '../App.less';
 
-import { Button, message, PageHeader, Steps } from 'antd';
+import { Button, Divider, message, PageHeader, Steps } from 'antd';
 import {
     HomeOutlined,
     FileTextTwoTone,
@@ -74,8 +74,8 @@ const AnalyzePage: FC = () => {
      * (extraction results are set by the child components that call the "extract" API endpoint)
      */
     useEffect(() => {
-        console.log("location changed", location)
-        console.log("Current step is ", currentStep)
+        //console.log("location changed", location)
+        //console.log("Current step is ", currentStep)
     }, [location])
 
 
@@ -137,7 +137,7 @@ const AnalyzePage: FC = () => {
             "settings": { "disable": ["ner"] }
         }
 
-        console.log("Starting analysis of extracted text", extractionResult.text, extractionResult.meta)
+        //console.log("Starting analysis of extracted text", extractionResult.text, extractionResult.meta)
         const options = {
             method: "POST",
             body: JSON.stringify(pipelineExecutionRequest),
@@ -226,26 +226,30 @@ const AnalyzePage: FC = () => {
 
             <div style={{ height: '100%', alignContent: "center", padding: "5px" }}>
 
+                <Steps style={{ paddingBottom: 30 }} direction="horizontal" size="default" current={currentStep}>
+                    <Step status={getStepStatus(0)} title={stepTitles[0]} icon={<FileTextTwoTone twoToneColor="#2ab88f" />} />
+                    <Step status={getStepStatus(1)} title={stepTitles[1]} icon={<CompassTwoTone twoToneColor="#2ab88f" spin={isAnalyzing} />} />
+                    <Step status={getStepStatus(2)} title={stepTitles[2]} icon={<ProfileTwoTone twoToneColor="#2ab88f" />} />
+                </Steps>
+
 
                 <PageHeader
-                    style={{ paddingBottom: 48, textAlign: 'center' }}
+                    style={{ textAlign: 'center' }}
                     className="site-page-header"
 
                     avatar={{ src: '/img/avatar.png', shape: "circle" }}
                     title={avatarTitle[currentStep]}
                     subTitle={avatarSubTitle[currentStep]}
                     extra={[
-                        <Button onClick={() => { back_to_start() }}><HomeOutlined /></Button>,
+                        <Button onClick={back_to_start}><HomeOutlined /></Button>,
                     ]}
                 />
 
+                <Divider type="horizontal" style={{ paddingBottom: 30 }}></Divider>
 
 
-                <Steps style={{ paddingBottom: 12 }} direction="horizontal" size="default" current={currentStep}>
-                    <Step status={getStepStatus(0)} title={stepTitles[0]} icon={<FileTextTwoTone />} />
-                    <Step status={getStepStatus(1)} title={stepTitles[1]} icon={<CompassTwoTone spin={isAnalyzing} />} />
-                    <Step status={getStepStatus(2)} title={stepTitles[2]} icon={<ProfileTwoTone />} />
-                </Steps>
+
+
 
 
 

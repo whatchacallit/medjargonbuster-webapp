@@ -1,6 +1,6 @@
-import { CSSProperties } from 'react';
+import { BaseSyntheticEvent, CSSProperties, SyntheticEvent, useEffect, useState } from 'react';
 
-import { Card, Input, Button, Typography, Switch } from 'antd';
+import { Card, Input, Button, Typography, Switch, Affix, Space, Popover } from 'antd';
 
 import { useAnalysisContext } from './Contexts';
 import '../App.less';
@@ -11,12 +11,15 @@ import { TranslationOutlined } from '@ant-design/icons';
 //import Editor from 'react-medium-editor';
 
 import ReactMarkdown from 'react-markdown'
-//import { render } from 'react-dom'
+import { renderToStaticMarkup } from 'react-dom/server'
 import gfm from 'remark-gfm'
+import Text from 'antd/lib/typography/Text';
+import DefinitionPopover from './DefinitionPopover';
 
 
 
-//const { Paragraph } = Typography;
+
+const { Paragraph, Link } = Typography;
 //const { Search, TextArea } = Input;
 
 
@@ -33,13 +36,14 @@ const IR_TOKEN_URL = "http://localhost:5000/getIRToken"
 function ReadableContent(props: any) {
     const ctx = useAnalysisContext()
 
-    const immersiveReaderButtonStyle: CSSProperties = {
-        //float: "right",
-        marginRight: 20
-    }
-    const cardStyle: CSSProperties = {
-        height: "100%"
-    }
+    const [selectedText, setSelectedText] = useState<string>("")
+
+
+
+    // Reference to div wrapping the markdown component. Used for Affix positioning etc,
+    const [summaryContainer, setSummaryContainer] = useState<HTMLDivElement | null>(null)
+
+
 
     var translateToLanguage = ctx.options.autoTranslateLanguage
     var originalLanguage = ctx.analysisResult.meta['language'] || "en-US"
@@ -48,8 +52,27 @@ function ReadableContent(props: any) {
 
     // FIXME maybe use multiple "chunks" ?
     var markdownSource = "* " + contentParagraphs.join("\n* ")
+    if (props.mark_chunks) {
+        console.log("Mark chunks: ", props.mark_chunks)
+        for (var c in props.mark_chunks) {
+            var text = props.mark_chunks[c][0]
+            markdownSource = markdownSource.replace(text, "[" + text + "](#)")
+            //console.log(markdownSource)
+        }
+    }
+    const renderers = {
+        link: (link: any) => {
+            //console.log(link)
+            return <Text mark>{link.node.children[0].value}</Text>
+        }
+    }
+
+    // Render markdown to html (for immersive reader)
+    var htmlContent = renderToStaticMarkup(<ReactMarkdown renderers={renderers} plugins={[gfm]} children={markdownSource} />)
+    //console.log("htmlContent", htmlContent)
+
     var chunks = [{
-        content: contentParagraphs.join("\n\n"),
+        content: htmlContent,
         mimeType: "text/html"
     }]
     //console.log("chunks", chunks);
@@ -143,11 +166,12 @@ function ReadableContent(props: any) {
     }
 
     const toggleAutotranslate = () => {
+        // update with new options object, with autoTranslate toggled
         ctx.setOptions(Object.assign({}, ctx.options, { autoTranslate: !ctx.options.autoTranslate }))
 
     }
 
-    let btnOpenIR = (<Button key={1} size="small" onClick={launchReader} style={immersiveReaderButtonStyle}>
+    let btnOpenIR = (<Button key={1} size="small" onClick={launchReader} type="primary" ghost>
         Immersive Reader <TranslationOutlined />
     </Button>)
 
@@ -157,14 +181,51 @@ function ReadableContent(props: any) {
         unCheckedChildren={originalLanguage.substr(0, 2)}
         checkedChildren={String(translateToLanguage).substr(0, 2)} />)
 
+
+
+
+
+    /**
+     * After a touch / mouse up event, check if we have some selected text.
+     * If so, display the "Dictionary lookup" popover
+     * @param evt 
+     */
+    const handleDictionaryLookup = (evt: any) => {
+        try {
+            var selectedText = String(evt.view.getSelection().getRangeAt(0).cloneContents().textContent).trim();
+            if (selectedText != "") {
+                console.log("Selected text:", selectedText)
+
+                setSelectedText(selectedText)
+            }
+            else {
+                console.log("No text selected", selectedText)
+                setSelectedText("")
+
+            }
+        }
+        catch (e) {
+            setSelectedText("")
+            console.log(e)
+        }
+
+    }
+
     return (
         <>
-            <Card title={props.title} extra={[btnOpenIR, switchAutoTranslate]}>
+            <DefinitionPopover lookupText={selectedText} visible={selectedText != ""}>
+                <Card bordered={false} headStyle={{ padding: 0 }} onTouchEnd={handleDictionaryLookup} onMouseUp={handleDictionaryLookup}>
+                    <Affix style={{ position: 'absolute', bottom: 15, right: 40 }} target={() => summaryContainer} >
+                        <Space>{btnOpenIR}
+                            {switchAutoTranslate}</Space>
+                    </Affix>
+                    <div ref={setSummaryContainer} style={{ padding: 0, margin: 0 }}>
+                        <ReactMarkdown plugins={[gfm]} allowDangerousHtml children={htmlContent} />
+                    </div>
 
-                <ReactMarkdown plugins={[gfm]} children={markdownSource} />
 
-
-            </Card>
+                </Card>
+            </DefinitionPopover>
         </>
     )
 }

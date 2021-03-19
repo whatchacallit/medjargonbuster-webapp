@@ -13,6 +13,10 @@ export type IAnalysisOptions = {
 }
 
 
+/**
+ * Context type for the Analysis. Contains the configuration and the results of text extraction and analysis.
+ *  
+ */
 export type IAnalysisContextType = {
     extractionResult: IPipelineResult,
     setExtractionResult: (result: IPipelineResult) => void
@@ -38,6 +42,9 @@ export type IAnalysisContextType = {
 
 }
 
+/**
+ * Create the AnalysisContext
+ */
 export const AnalysisContext = React.createContext<IAnalysisContextType>({
     extractionResult: {},
     setExtractionResult: result => console.log(result),
